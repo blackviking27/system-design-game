@@ -33,7 +33,7 @@ func main() {
 	// Defining the level
 	levelOne := engine.Level{
 		Name:              "Level 1",
-		TargetUptimeTicks: 500,
+		TargetUptimeTicks: 200,
 		MaxDroppedPackets: 50,
 		BaseTrafficRate:   3,
 		StartingBudget:    400,

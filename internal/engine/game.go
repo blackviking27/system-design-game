@@ -42,6 +42,13 @@ func (this *Game) Update() error {
 		if ebiten.IsKeyPressed(ebiten.KeyR) {
 			this.State = StatePlaying
 			this.Network.TickCount = 0
+
+			// Reset the dropped packets in network
+			for _, node := range this.Network.Nodes {
+				node.DroppedCount = 0
+				node.ProcessedCount = 0
+				node.Queue = make([]*sim.Packet, 0)
+			}
 		}
 		return nil
 	}
