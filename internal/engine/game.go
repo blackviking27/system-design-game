@@ -24,6 +24,9 @@ type Game struct {
 	linkingNode  *sim.Node
 	mouseX       int
 	mouseY       int
+
+	// Game mechanics
+	CurrentBudget int
 }
 
 // Runs the simulation 6 ticks per second
@@ -36,8 +39,9 @@ func (this *Game) Update() error {
 	// only run the game if we are not in a terminal game state
 	if this.State != StatePlaying {
 		// Game restart logic
-		if ebiten.IsKeyPressed(ebiten.KeySpace) {
-
+		if ebiten.IsKeyPressed(ebiten.KeyR) {
+			this.State = StatePlaying
+			this.Network.TickCount = 0
 		}
 		return nil
 	}

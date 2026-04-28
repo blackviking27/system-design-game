@@ -16,4 +16,5 @@ type Level struct {
 	TargetUptimeTicks int // How many ticks the user needs to survive
 	MaxDroppedPackets int // How many dropped packets cause a game over
 	BaseTrafficRate   int // Packets generated per tick
+	StartingBudget    int // Starting budget of the game
 }

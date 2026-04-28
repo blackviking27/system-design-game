@@ -12,14 +12,14 @@ func main() {
 	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
 
 	// Create a load balancer
-	lb := sim.NewNode("LB-Main", sim.TypeLoadBalancer, 100, 100)
+	lb := sim.NewNode("LB-Main", sim.TypeLoadBalancer, 100, 100, 0)
 	lb.X, lb.Y = 400, 150
 
 	// Create 2 weak servers
-	serverA := sim.NewNode("Server-A", sim.TypeServer, 10, 1)
+	serverA := sim.NewNode("Server-A", sim.TypeServer, 10, 1, 0)
 	serverA.X, serverA.Y = 200, 450
 
-	serverB := sim.NewNode("Server-B", sim.TypeServer, 10, 1)
+	serverB := sim.NewNode("Server-B", sim.TypeServer, 10, 1, 0)
 	serverB.X, serverB.Y = 600, 450
 
 	// Creating connections
@@ -36,13 +36,15 @@ func main() {
 		TargetUptimeTicks: 500,
 		MaxDroppedPackets: 50,
 		BaseTrafficRate:   3,
+		StartingBudget:    400,
 	}
 
 	// Creating the engine game wrapper
 	game := &engine.Game{
-		Network: network,
-		Level:   levelOne,
-		State:   engine.StatePlaying,
+		Network:       network,
+		Level:         levelOne,
+		State:         engine.StatePlaying,
+		CurrentBudget: levelOne.StartingBudget,
 	}
 
 	// Configure window and run

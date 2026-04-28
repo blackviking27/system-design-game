@@ -1,0 +1,42 @@
+package ui
+
+import (
+	"fmt"
+	"image/color"
+
+	"github.com/blackviking27/system-design-game/internal/sim"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
+)
+
+const TrayY = 500
+
+func DrawTray(screen *ebiten.Image, budget int) {
+	// Draw background tray
+	vector.FillRect(screen, 0, TrayY, 800, 100, color.RGBA{40, 40, 40, 255}, true)
+
+	// Draw budget
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("BUDGET: $%d", budget), 20, TrayY+40)
+
+	// Draw catalog items
+	startX := float32(150)
+	for i, template := range sim.Catalog {
+		x := startX + float32(i*180)
+		y := float32(TrayY + 20)
+
+		// Color based on type
+		c := color.RGBA{100, 250, 150, 255}
+		if template.Type == sim.TypeLoadBalancer {
+			c = color.RGBA{100, 150, 255, 255}
+		}
+
+		// Draw icon
+		vector.FillRect(screen, x, y, 40, 40, c, true)
+
+		// Draw label and Cost
+		label := fmt.Sprintf("%s\n%d", template.Name, template.Cost)
+		ebitenutil.DebugPrintAt(screen, label, int(x+50), int(y+50))
+	}
+
+}

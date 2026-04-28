@@ -27,10 +27,13 @@ type Node struct {
 
 	// Canvas coordinates
 	X, Y float64
+
+	// Cost of the system
+	Cost int
 }
 
 // Create a new node
-func NewNode(id string, t NodeType, maxRam, processPower int) *Node {
+func NewNode(id string, t NodeType, maxRam, processPower, cost int) *Node {
 	return &Node{
 		ID:           id,
 		Type:         t,
@@ -38,10 +41,26 @@ func NewNode(id string, t NodeType, maxRam, processPower int) *Node {
 		ProcessPower: processPower,
 		Queue:        make([]*Packet, 0),
 		Outbound:     make([]*Node, 0),
+		Cost:         cost,
 	}
 }
 
 // Function to add downstream node
 func (this *Node) LinkTo(dest *Node) {
 	this.Outbound = append(this.Outbound, dest)
+}
+
+// Node component catalogue type
+type NodeTemplate struct {
+	Type         NodeType
+	Name         string
+	Cost         int
+	MaxRam       int
+	ProcessPower int
+}
+
+var Catalog = []NodeTemplate{
+	{Type: TypeServer, Name: "Lite server\n(2 pkts/tick)", Cost: 100, MaxRam: 10, ProcessPower: 2},
+	{Type: TypeServer, Name: "Heavy server\n(5 pkts/tick)", Cost: 100, MaxRam: 50, ProcessPower: 5},
+	{Type: TypeLoadBalancer, Name: "Load Balancer", Cost: 500, MaxRam: 5000, ProcessPower: 100},
 }

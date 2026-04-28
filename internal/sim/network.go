@@ -50,7 +50,6 @@ func (this *Network) Tick() {
 				} else {
 					target.Queue = append(target.Queue, packet)
 				}
-
 			}
 		}
 	}

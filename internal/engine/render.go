@@ -57,6 +57,9 @@ func DrawNetwork(screen *ebiten.Image, game *Game) {
 		ebitenutil.DebugPrintAt(screen, stats, int(startX), int(startY)-50)
 	}
 
+	// Draw the catalog tray
+	ui.DrawTray(screen, game.CurrentBudget)
+
 	// Draw the HUD
 	isGameOver := game.State == StateGameOver
 	isVictory := game.State == StateVictory
