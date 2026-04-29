@@ -19,7 +19,7 @@ var (
 	colorLineDrawing   = color.RGBA{R: 255, G: 200, B: 0, A: 255}
 )
 
-func DrawNetwork(screen *ebiten.Image, game *Game) {
+func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 	// Draw links (lines) first so they render underneath nodes
 	for _, node := range game.Network.Nodes {
 		for _, out := range node.Outbound {

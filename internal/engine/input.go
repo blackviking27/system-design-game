@@ -9,7 +9,7 @@ import (
 )
 
 // Process all mouse and keyboard interactions
-func (this *Game) HandleInput() {
+func (this *GameplayScene) HandleInput() {
 	x, y := ebiten.CursorPosition()
 	this.mouseX, this.mouseY = x, y
 
@@ -97,7 +97,7 @@ func (this *Game) HandleInput() {
 }
 
 // Check if the given X, Y node intersect with a node
-func (this *Game) getNodeAt(x, y int) *sim.Node {
+func (this *GameplayScene) getNodeAt(x, y int) *sim.Node {
 	fx, fy := float64(x), float64(y)
 	w, h := float64(80), float64(50)
 

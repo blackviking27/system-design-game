@@ -12,11 +12,11 @@ func TestBottleNeck(t *testing.T) {
 	net := &sim.Network{Nodes: make(map[string]*sim.Node)}
 
 	// Create a LB with infinite capacity
-	lb := sim.NewNode("lb-1", sim.TypeLoadBalancer, 1000, 1000)
+	lb := sim.NewNode("lb-1", sim.TypeLoadBalancer, 1000, 1000, 0)
 
 	// Create 2 weak servers (can only hold 5 packets in RAM and process 2 at a time)
-	serverA := sim.NewNode("srv-A", sim.TypeServer, 5, 2)
-	serverB := sim.NewNode("srv-B", sim.TypeServer, 5, 2)
+	serverA := sim.NewNode("srv-A", sim.TypeServer, 5, 2, 0)
+	serverB := sim.NewNode("srv-B", sim.TypeServer, 5, 2, 0)
 
 	// Wiring the servers to the load balancer
 	lb.LinkTo(serverA)
