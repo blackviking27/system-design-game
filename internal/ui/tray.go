@@ -10,20 +10,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-const TrayY = 500
-
 func DrawTray(screen *ebiten.Image, budget int) {
+	w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
+	trayHeight := 100
+	trayY := h - trayHeight
+
 	// Draw background tray
-	vector.FillRect(screen, 0, TrayY, 800, 100, color.RGBA{40, 40, 40, 255}, true)
+	vector.FillRect(screen, 0, float32(trayY), float32(w), float32(trayHeight), color.RGBA{40, 40, 40, 255}, true)
 
 	// Draw budget
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("BUDGET: $%d", budget), 20, TrayY+40)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("BUDGET: $%d", budget), 20, trayY+40)
 
 	// Draw catalog items
 	startX := float32(150)
 	for i, template := range sim.Catalog {
 		x := startX + float32(i*180)
-		y := float32(TrayY + 20)
+		y := float32(trayY + 20)
 
 		// Color based on type
 		c := color.RGBA{100, 255, 150, 255} // Default Green

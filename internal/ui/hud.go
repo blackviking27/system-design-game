@@ -33,13 +33,14 @@ func DrawHUD(screen *ebiten.Image, network *sim.Network, levelName string, targe
 	ebitenutil.DebugPrintAt(screen, stats, 10, 10)
 
 	// Game overlay for loss or victory
-	if isGameOver {
+	if isGameOver || isVictory {
 		screen.Fill(colorOverlay)
-		ebitenutil.DebugPrintAt(screen, "CRITICAL SYSTEM FAILURE\n\nToo many packets dropped.\nGAME OVER", 330, 280)
-	} else if isVictory {
-		screen.Fill(colorOverlay)
-		ebitenutil.DebugPrintAt(screen, "SYSTEM STABLE\n\nYou survived the traffic surge.\nVICTORY!", 330, 280)
-
+		w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
+		msg := "CRITICAL SYSTEM FAILURE\n\nToo many packets dropped.\nGAME OVER"
+		if isVictory {
+			msg = "SYSTEM STABLE\n\nYou survived the traffic surge.\nVICTORY!"
+		}
+		// Approximate centering (DebugPrint doesn't give text bounds easily, so we use heuristic)
+		ebitenutil.DebugPrintAt(screen, msg, w/2-100, h/2-20)
 	}
-
 }

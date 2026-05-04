@@ -13,10 +13,16 @@ func (this *GameplayScene) HandleInput() {
 	x, y := ebiten.CursorPosition()
 	this.mouseX, this.mouseY = x, y
 
+	sh := this.screenHeight
+	if sh == 0 {
+		sh = 600
+	}
+	trayY := sh - 100
+
 	// 1. DRAG and DROP a node
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 
-		if y >= 500 {
+		if y >= trayY {
 			// Tray click
 			// Check if catalog item is clicked
 			itemIndex := (x - 150) / 180
@@ -58,7 +64,7 @@ func (this *GameplayScene) HandleInput() {
 	} else if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		if this.draggingNode != nil {
 			// Did the user drop the node
-			if y >= 500 {
+			if y >= trayY {
 				// Dropped back into the tray
 				// New node does not exist in the network, refund the money into the tray
 				if _, exists := this.Network.Nodes[this.draggingNode.ID]; !exists {

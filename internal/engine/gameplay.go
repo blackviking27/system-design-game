@@ -16,15 +16,6 @@ const (
 	StateVictory  GameState = "Victory"
 )
 
-// level defines the parameters and win conditions for a scenario
-// type Level struct {
-// 	Name              string
-// 	TargetUptimeTicks int // How many ticks the user needs to survive
-// 	MaxDroppedPackets int // How many dropped packets cause a game over
-// 	BaseTrafficRate   int // Packets generated per tick
-// 	StartingBudget    int // Starting budget of the game
-// }
-
 // Gameplay scene
 type GameplayScene struct {
 	Network   *sim.Network
@@ -48,6 +39,10 @@ type GameplayScene struct {
 	linkingNode  *sim.Node
 	mouseX       int
 	mouseY       int
+
+	// Screen dimensions
+	screenWidth  int
+	screenHeight int
 }
 
 func NewGameplayScene(levelPath string) *GameplayScene {
@@ -140,5 +135,7 @@ func (this *GameplayScene) checkWinOrLoseCondition() {
 }
 
 func (this *GameplayScene) Draw(screen *ebiten.Image) {
+	this.screenWidth = screen.Bounds().Dx()
+	this.screenHeight = screen.Bounds().Dy()
 	DrawNetwork(screen, this)
 }
