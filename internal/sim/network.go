@@ -107,3 +107,25 @@ func (this *Network) Tick() {
 	}
 	this.TickCount += 1
 }
+
+func (this *Network) RemoveNode(nodeID string) {
+
+	_, exists := this.Nodes[nodeID]
+	if !exists {
+		return
+	}
+
+	// remove the node from the network
+	delete(this.Nodes, nodeID)
+
+	// remove the connection to node from other
+	for _, node := range this.Nodes {
+		var newOutBoundConnections []*Node
+		for _, targetNode := range node.Outbound {
+			if targetNode.ID != nodeID {
+				newOutBoundConnections = append(newOutBoundConnections, targetNode)
+			}
+		}
+		node.Outbound = newOutBoundConnections
+	}
+}

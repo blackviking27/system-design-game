@@ -69,17 +69,21 @@ func (this *GameplayScene) HandleInput() {
 				// New node does not exist in the network, refund the money into the tray
 				if _, exists := this.Network.Nodes[this.draggingNode.ID]; !exists {
 					this.CurrentBudget += this.draggingNode.Cost
+				} else {
+					// Existing node, remove the node from network
+					if this.draggingNode.ID != "LB_MAIN" {
+						this.Network.RemoveNode(this.draggingNode.ID)
+						this.CurrentBudget += this.draggingNode.Cost
+					}
 				}
 			} else {
 				// Dropped the component on the canvas
 				if _, exists := this.Network.Nodes[this.draggingNode.ID]; !exists {
 					this.Network.Nodes[this.draggingNode.ID] = this.draggingNode
 				}
-
 			}
 			this.draggingNode = nil
 		}
-
 		this.draggingNode = nil
 	}
 
@@ -97,6 +101,14 @@ func (this *GameplayScene) HandleInput() {
 				this.linkingNode.LinkTo(targetNode)
 			}
 			this.linkingNode = nil // Cancel the draw state
+		}
+	}
+
+	// 3. Node deletion via keyboard (Hover + Backspace)
+	if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) || inpututil.IsKeyJustPressed(ebiten.KeyDelete) {
+		if node := this.getNodeAt(x, y); node != nil {
+			this.Network.RemoveNode(node.ID)
+			this.CurrentBudget += node.Cost
 		}
 	}
 
