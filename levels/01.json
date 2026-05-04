@@ -1,0 +1,19 @@
+{
+  "id": "level_01",
+  "name": "Level 1: The Viral Spike",
+  "starting_budget": 1200,
+  "target_uptime_ticks": 1000,
+  "max_dropped_packets": 50,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    { "start_tick": 0, "rate": 2 },
+    { "start_tick": 300, "rate": 50 },
+    { "start_tick": 400, "rate": 5 }
+  ]
+}

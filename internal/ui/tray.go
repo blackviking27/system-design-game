@@ -26,9 +26,16 @@ func DrawTray(screen *ebiten.Image, budget int) {
 		y := float32(TrayY + 20)
 
 		// Color based on type
-		c := color.RGBA{100, 250, 150, 255}
-		if template.Type == sim.TypeLoadBalancer {
+		c := color.RGBA{100, 255, 150, 255} // Default Green
+		switch template.Type {
+		case sim.TypeLoadBalancer:
 			c = color.RGBA{100, 150, 255, 255}
+		case sim.TypeMessageQueue:
+			c = color.RGBA{0, 255, 255, 255}
+		case sim.TypeDatabase:
+			c = color.RGBA{200, 100, 255, 255}
+		case sim.TypeCache:
+			c = color.RGBA{255, 200, 100, 255}
 		}
 
 		// Draw icon

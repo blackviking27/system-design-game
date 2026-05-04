@@ -17,13 +17,13 @@ const (
 )
 
 // level defines the parameters and win conditions for a scenario
-type Level struct {
-	Name              string
-	TargetUptimeTicks int // How many ticks the user needs to survive
-	MaxDroppedPackets int // How many dropped packets cause a game over
-	BaseTrafficRate   int // Packets generated per tick
-	StartingBudget    int // Starting budget of the game
-}
+// type Level struct {
+// 	Name              string
+// 	TargetUptimeTicks int // How many ticks the user needs to survive
+// 	MaxDroppedPackets int // How many dropped packets cause a game over
+// 	BaseTrafficRate   int // Packets generated per tick
+// 	StartingBudget    int // Starting budget of the game
+// }
 
 // Gameplay scene
 type GameplayScene struct {
@@ -31,11 +31,15 @@ type GameplayScene struct {
 	tickTimer int
 
 	// Game level
-	Level Level
+	Level *Level
 	State GameState
 
 	// level budget
 	CurrentBudget int
+
+	// Traffic rate
+	currentTrafficRate  int
+	nextTrafficEventIdx int
 
 	// Game controls
 	draggingNode *sim.Node
@@ -46,44 +50,28 @@ type GameplayScene struct {
 	mouseY       int
 }
 
-func NewGameplayScene() *GameplayScene {
+func NewGameplayScene(levelPath string) *GameplayScene {
+
+	// Load level json data
+	lvl, err := LoadLevel(levelPath)
+	if err != nil {
+		panic(err)
+	}
+
 	// Initializing the sim network
 	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
 
 	// Create a load balancer
-	lb := sim.NewNode("LB-Main", sim.TypeLoadBalancer, 100, 100, 0)
+	lb := sim.NewNode("LB-Main", sim.TypeLoadBalancer, 500, 500, 0)
 	lb.X, lb.Y = 400, 150
-
-	// Create 2 weak servers
-	serverA := sim.NewNode("Server-A", sim.TypeServer, 10, 1, 0)
-	serverA.X, serverA.Y = 200, 450
-
-	serverB := sim.NewNode("Server-B", sim.TypeServer, 10, 1, 0)
-	serverB.X, serverB.Y = 600, 450
-
-	// Creating connections
-	lb.LinkTo(serverA)
-	lb.LinkTo(serverB)
-
 	network.Nodes[lb.ID] = lb
-	network.Nodes[serverA.ID] = serverA
-	network.Nodes[serverB.ID] = serverB
-
-	// Defining the level
-	levelOne := Level{
-		Name:              "Level 1",
-		TargetUptimeTicks: 200,
-		MaxDroppedPackets: 50,
-		BaseTrafficRate:   3,
-		StartingBudget:    400,
-	}
 
 	// Creating the engine game wrapper
 	return &GameplayScene{
 		Network:       network,
-		Level:         levelOne,
+		Level:         lvl,
 		State:         StatePlaying,
-		CurrentBudget: levelOne.StartingBudget,
+		CurrentBudget: lvl.StartingBudget,
 	}
 }
 
@@ -105,13 +93,16 @@ func (this *GameplayScene) Update() (Scene, error) {
 	if this.tickTimer >= framesPerTick {
 		this.Network.Tick()
 
-		// Simulating Traffic
-		// Continously feed traffic to the load balancer for simulation
-		trafficRate := this.Level.BaseTrafficRate
+		// Dynamic traffic rate
+		for this.nextTrafficEventIdx < len(this.Level.TrafficPattern) && this.Network.TickCount > uint64(this.Level.TrafficPattern[this.nextTrafficEventIdx].StartTick) {
+			this.currentTrafficRate = this.Level.TrafficPattern[this.nextTrafficEventIdx].Rate
+			this.nextTrafficEventIdx++
+		}
 
+		trafficRate := this.currentTrafficRate
 		// Manually increasing traffic
 		if ebiten.IsKeyPressed(ebiten.KeySpace) {
-			trafficRate = 20
+			trafficRate = 50
 		}
 
 		for _, node := range this.Network.Nodes {

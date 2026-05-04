@@ -8,6 +8,9 @@ type NodeType string
 const (
 	TypeLoadBalancer NodeType = "LoadBalancer"
 	TypeServer       NodeType = "Server"
+	TypeMessageQueue NodeType = "MessageQueue"
+	TypeDatabase     NodeType = "DataBase"
+	TypeCache        NodeType = "Cache"
 )
 
 type Node struct {
@@ -63,4 +66,8 @@ var Catalog = []NodeTemplate{
 	{Type: TypeServer, Name: "Lite server\n(2 pkts/tick)", Cost: 100, MaxRam: 10, ProcessPower: 2},
 	{Type: TypeServer, Name: "Heavy server\n(5 pkts/tick)", Cost: 100, MaxRam: 50, ProcessPower: 5},
 	{Type: TypeLoadBalancer, Name: "Load Balancer", Cost: 500, MaxRam: 5000, ProcessPower: 100},
+
+	{Type: TypeMessageQueue, Name: "Message Queue\n(Buffer)", Cost: 250, MaxRam: 1000, ProcessPower: 5},
+	{Type: TypeDatabase, Name: "Data Base\n(SQL)", Cost: 400, MaxRam: 5000, ProcessPower: 1},
+	{Type: TypeCache, Name: "Cache\n(Redis)", Cost: 200, MaxRam: 20, ProcessPower: 15},
 }

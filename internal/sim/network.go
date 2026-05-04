@@ -1,5 +1,7 @@
 package sim
 
+import "math/rand"
+
 // Network stores the global state of the simulation
 type Network struct {
 	Nodes     map[string]*Node
@@ -8,51 +10,100 @@ type Network struct {
 
 // Tick advances the simulation state by one step
 func (this *Network) Tick() {
-	// Step 1: Servers process their existing queues to free up RAM
 	for _, node := range this.Nodes {
-		if node.Type == TypeServer {
+		switch node.Type {
+
+		// 1. Standard processiong (Servers and Databases)
+		case TypeServer:
+		case TypeDatabase:
 			packetsProcessedThisTick := 0
-			// Process up the node's CPU limit
 			for len(node.Queue) > 0 && packetsProcessedThisTick < node.ProcessPower {
 				packet := node.Queue[0]
 				node.Queue = node.Queue[1:]
-
 				packet.Status = StatusProcessed
-				node.ProcessedCount += 1
-				packetsProcessedThisTick += 1
+				node.ProcessedCount++
+				packetsProcessedThisTick++
 			}
-		}
-	}
 
-	// Step 2: Load balancers distribute their incoming traffic
-	for _, node := range this.Nodes {
-		if node.Type == TypeLoadBalancer {
-			// A load balancer attempts to route everything in its queue
+		// 2. Cache processing (Probability case)
+		case TypeCache:
+			packetsProcessedThisTick := 0
+			if len(node.Queue) > 0 && packetsProcessedThisTick < node.ProcessPower {
+				packet := node.Queue[0]
+				node.Queue = node.Queue[1:]
+
+				if rand.Float32() <= 0.8 {
+					// CACHE HIT (80% Hit chance): Packet is Processed instantly
+					packet.Status = StatusProcessed
+					packetsProcessedThisTick++
+				} else {
+					// CACHE MISS (20% Chance): Packet is forwarded to DB or dropped
+					if len(node.Outbound) > 0 {
+						target := node.Outbound[0]
+						if len(target.Queue) >= target.MaxRam {
+							packet.Status = StatusDropped
+							target.DroppedCount++
+						} else {
+							target.Queue = append(target.Queue, packet)
+						}
+					} else {
+						packet.Status = StatusDropped
+						node.DroppedCount++
+					}
+				}
+			}
+			packetsProcessedThisTick++
+
+		// 3. INSTANT ROUTING (Loadbalancer)
+		case TypeLoadBalancer:
 			for len(node.Queue) > 0 {
 				packet := node.Queue[0]
 				node.Queue = node.Queue[1:]
 
-				// No connection established wit the load balancer
 				if len(node.Outbound) == 0 {
 					packet.Status = StatusDropped
-					node.DroppedCount += 1
+					node.DroppedCount++
 					continue
 				}
 
-				// Execute round robin algorithm
 				target := node.Outbound[node.roundRobinIdx]
 				node.roundRobinIdx = (node.roundRobinIdx + 1) % len(node.Outbound)
 
-				// Enforce bottleneck: Does the target have enough RAM to process the current packet
 				if len(target.Queue) >= target.MaxRam {
 					packet.Status = StatusDropped
-					target.DroppedCount += 1
+					target.DroppedCount++
 				} else {
 					target.Queue = append(target.Queue, packet)
 				}
 			}
+
+		// 4. THROTTLED ROUTING (Message Queue)
+		case TypeMessageQueue:
+			routedThisTick := 0
+			for len(node.Queue) > 0 && routedThisTick < node.ProcessPower {
+				packet := node.Queue[0]
+				node.Queue = node.Queue[1:]
+
+				if len(node.Outbound) == 0 {
+					packet.Status = StatusDropped
+					node.DroppedCount++
+					routedThisTick++
+					continue
+				}
+
+				target := node.Outbound[node.roundRobinIdx]
+				node.roundRobinIdx = (node.roundRobinIdx + 1) % len(node.Outbound)
+
+				if len(target.Queue) >= target.MaxRam {
+					packet.Status = StatusDropped
+					target.DroppedCount++
+				} else {
+					target.Queue = append(target.Queue, packet)
+				}
+
+				routedThisTick++
+			}
 		}
 	}
-
 	this.TickCount += 1
 }

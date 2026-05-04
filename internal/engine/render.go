@@ -17,6 +17,10 @@ var (
 	colorServerFailing = color.RGBA{R: 255, G: 100, B: 100, A: 255}
 	colorLine          = color.RGBA{R: 150, G: 150, B: 150, A: 255}
 	colorLineDrawing   = color.RGBA{R: 255, G: 200, B: 0, A: 255}
+
+	colorMessageQueue = color.RGBA{0, 255, 255, 255}
+	colorDB           = color.RGBA{200, 100, 255, 255}
+	colorCache        = color.RGBA{255, 200, 100, 255}
 )
 
 func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
@@ -34,13 +38,22 @@ func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 
 	// Draw nodes(servers)
 	for _, node := range game.Network.Nodes {
-		serverColor := colorServerOK
+		nodeColor := colorServerOK
 
 		// Color based on server and RAM limits
-		if node.Type == sim.TypeLoadBalancer {
-			serverColor = colorLB
-		} else if len(node.Queue) >= node.MaxRam {
-			serverColor = colorServerFailing
+		if len(node.Queue) >= node.MaxRam {
+			nodeColor = colorServerFailing
+		} else {
+			switch node.Type {
+			case sim.TypeLoadBalancer:
+				nodeColor = colorLB
+			case sim.TypeMessageQueue:
+				nodeColor = colorMessageQueue
+			case sim.TypeDatabase:
+				nodeColor = colorDB
+			case sim.TypeCache:
+				nodeColor = colorCache
+			}
 		}
 
 		// Center the rectangle on the x,y coordinates
@@ -48,7 +61,7 @@ func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 		startX, startY := float32(node.X)-w/2, float32(node.Y)-h/2
 
 		// Draw the node block
-		vector.FillRect(screen, startX, startY, w, h, serverColor, true)
+		vector.FillRect(screen, startX, startY, w, h, nodeColor, true)
 
 		// Stats for node
 		stats := fmt.Sprintf("%s\nRAM: %d/%d\nDrop: %d", node.ID, len(node.Queue), node.MaxRam, node.DroppedCount)

@@ -14,9 +14,9 @@ type MainMenuScene struct{}
 func (this *MainMenuScene) Update() (Scene, error) {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
-
+		currentLevel := "levels/01.json"
 		if x >= 300 && y <= 500 && y >= 250 && y <= 310 {
-			return NewGameplayScene(), nil
+			return NewGameplayScene(currentLevel), nil
 		}
 
 	}
