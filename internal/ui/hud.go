@@ -6,7 +6,6 @@ import (
 
 	"github.com/blackviking27/system-design-game/internal/sim"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 var (
@@ -30,7 +29,7 @@ func DrawHUD(screen *ebiten.Image, network *sim.Network, levelName string, targe
 		maxDropped,
 	)
 
-	ebitenutil.DebugPrintAt(screen, stats, 10, 10)
+	DrawText(screen, stats, 10, 20, 14, colorText)
 
 	// Game overlay for loss or victory
 	if isGameOver || isVictory {
@@ -40,7 +39,7 @@ func DrawHUD(screen *ebiten.Image, network *sim.Network, levelName string, targe
 		if isVictory {
 			msg = "SYSTEM STABLE\n\nYou survived the traffic surge.\nVICTORY!"
 		}
-		// Approximate centering (DebugPrint doesn't give text bounds easily, so we use heuristic)
-		ebitenutil.DebugPrintAt(screen, msg, w/2-100, h/2-20)
+		// Approximate centering
+		DrawText(screen, msg, float64(w/2-100), float64(h/2-20), 20, colorText)
 	}
 }

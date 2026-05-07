@@ -12,7 +12,7 @@
     "Database"
   ],
   "traffic_pattern": [
-    { "start_tick": 0, "rate": 2 },
+    { "start_tick": 0, "rate": 0 },
     { "start_tick": 300, "rate": 50 },
     { "start_tick": 400, "rate": 5 }
   ]

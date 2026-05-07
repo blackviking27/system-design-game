@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"image/color"
 
-	"github.com/blackviking27/system-design-game/internal/sim"
 	"github.com/blackviking27/system-design-game/internal/ui"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+)
+
+const (
+	imgWidth  int = 64
+	imgHeight int = 64
 )
 
 var (
@@ -38,30 +42,34 @@ func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 
 	// Draw nodes(servers)
 	for _, node := range game.Network.Nodes {
-		nodeColor := colorServerOK
+		isFailing := len(node.Queue) >= node.MaxRam
 
-		// Color based on server and RAM limits
-		if len(node.Queue) >= node.MaxRam {
-			nodeColor = colorServerFailing
+		var img *ebiten.Image
+		if isFailing {
+			img = ui.NodeImagesRed[node.Type]
 		} else {
-			switch node.Type {
-			case sim.TypeLoadBalancer:
-				nodeColor = colorLB
-			case sim.TypeMessageQueue:
-				nodeColor = colorMessageQueue
-			case sim.TypeDatabase:
-				nodeColor = colorDB
-			case sim.TypeCache:
-				nodeColor = colorCache
-			}
+			img = ui.NodeImages[node.Type]
 		}
 
-		// Center the rectangle on the x,y coordinates
-		w, h := float32(80), float32(50)
-		startX, startY := float32(node.X)-w/2, float32(node.Y)-h/2
+		// Center the img on the x,y coordinates
+		w, h := float64(imgWidth), float64(imgHeight)
+		startX, startY := float64(node.X)-w/2, float64(node.Y)-h/2
 
-		// Draw the node block
-		vector.FillRect(screen, startX, startY, w, h, nodeColor, true)
+		if img != nil {
+			op := &ebiten.DrawImageOptions{}
+
+			// Optional: Scale image to fit 80x50 exactly if it's too big/small
+			bounds := img.Bounds()
+			scaleX := w / float64(bounds.Dx())
+			scaleY := h / float64(bounds.Dy())
+			op.GeoM.Scale(scaleX, scaleY)
+
+			op.GeoM.Translate(startX, startY)
+			screen.DrawImage(img, op)
+		} else {
+			// Fallback
+			vector.FillRect(screen, float32(startX), float32(startY), float32(w), float32(h), color.RGBA{100, 255, 250, 255}, true)
+		}
 
 		// Stats for node
 		stats := fmt.Sprintf("%s\nRAM: %d/%d\nDrop: %d", node.ID, len(node.Queue), node.MaxRam, node.DroppedCount)

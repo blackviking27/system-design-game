@@ -3,8 +3,8 @@ package engine
 import (
 	"image/color"
 
+	"github.com/blackviking27/system-design-game/internal/ui"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -39,12 +39,12 @@ func (this *MainMenuScene) Draw(screen *ebiten.Image) {
 	this.screenHeight = h
 
 	// Draw title
-	ebitenutil.DebugPrintAt(screen, "=== SYSTEM DESIGN SANDBOX ===", w/2-100, h/2-150)
+	ui.DrawText(screen, "=== SYSTEM DESIGN SANDBOX ===", float64(w/2-150), float64(h/2-150), 20, color.White)
 
 	// Draw Button Background
 	bx, by, bw, bh := w/2-100, h/2-30, 200, 60
 	vector.FillRect(screen, float32(bx), float32(by), float32(bw), float32(bh), color.RGBA{100, 150, 255, 255}, true)
 
 	// Draw Button Text
-	ebitenutil.DebugPrintAt(screen, "START LEVEL 1", w/2-45, h/2-8)
+	ui.DrawText(screen, "START LEVEL 1", float64(w/2-55), float64(h/2-8), 16, color.White)
 }
