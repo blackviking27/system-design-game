@@ -25,9 +25,13 @@ var (
 	colorMessageQueue = color.RGBA{0, 255, 255, 255}
 	colorDB           = color.RGBA{200, 100, 255, 255}
 	colorCache        = color.RGBA{255, 200, 100, 255}
+	colorBackground   = color.RGBA{30, 30, 46, 255}
 )
 
 func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
+	// Fill the background
+	screen.Fill(colorBackground)
+
 	// Draw links (lines) first so they render underneath nodes
 	for _, node := range game.Network.Nodes {
 		for _, out := range node.Outbound {
