@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/blackviking27/system-design-game/internal/sim"
+	"github.com/blackviking27/system-design-game/internal/ui"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -17,7 +18,7 @@ func (this *GameplayScene) HandleInput() {
 	if sh == 0 {
 		sh = 600
 	}
-	trayY := sh - 100
+	trayY := sh - ui.TrayHeight
 
 	// 1. DRAG and DROP a node
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {

@@ -9,9 +9,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+const (
+	TrayHeight = 150
+)
+
 func DrawTray(screen *ebiten.Image, budget int) {
 	w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
-	trayHeight := 150
+	trayHeight := TrayHeight
 	trayY := h - trayHeight
 
 	// Draw background tray
@@ -27,19 +31,22 @@ func DrawTray(screen *ebiten.Image, budget int) {
 		y := float32(trayY + 20)
 
 		// Draw icon (40x40)
-		img := NodeImages[template.Type]
-		if img != nil {
-			op := &ebiten.DrawImageOptions{}
-			// Scale image to 40x40
-			bounds := img.Bounds()
-			scaleX := 40.0 / float64(bounds.Dx())
-			scaleY := 40.0 / float64(bounds.Dy())
-			op.GeoM.Scale(scaleX, scaleY)
-			op.GeoM.Translate(float64(x), float64(y))
-			screen.DrawImage(img, op)
-		} else {
-			// Fallback if image not found
-			vector.FillRect(screen, x, y, 40, 40, color.RGBA{100, 255, 150, 255}, true)
+		frameImages := NodeFrames[template.Type]
+		for _, img := range frameImages {
+			if img != nil {
+				op := &ebiten.DrawImageOptions{}
+				// Scale image to 40x40
+				bounds := img.Bounds()
+				scaleX := 40.0 / float64(bounds.Dx())
+				scaleY := 40.0 / float64(bounds.Dy())
+				op.GeoM.Scale(scaleX, scaleY)
+				op.GeoM.Translate(float64(x), float64(y))
+				screen.DrawImage(img, op)
+			} else {
+				// Fallback if image not found
+				vector.FillRect(screen, x, y, 40, 40, color.RGBA{100, 255, 150, 255}, true)
+			}
+
 		}
 
 		// Draw label and Cost below the icon

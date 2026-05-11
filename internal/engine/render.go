@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"image/color"
+	"time"
 
 	"github.com/blackviking27/system-design-game/internal/ui"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -48,21 +49,31 @@ func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 	for _, node := range game.Network.Nodes {
 		isFailing := len(node.Queue) >= node.MaxRam
 
-		var img *ebiten.Image
+		// 1. Pick the correct animation array
+		var frames []*ebiten.Image
 		if isFailing {
-			img = ui.NodeImagesRed[node.Type]
+			frames = ui.NodeRedFrames[node.Type]
 		} else {
-			img = ui.NodeImages[node.Type]
+			frames = ui.NodeFrames[node.Type]
+		}
+
+		// 2. Determin which frame to show in the selected array
+		var frameindex int
+		if len(frames) > 0 {
+			animIndex := (time.Now().UnixMilli() / 500) % int64(len(frames))
+			frameindex = int(animIndex)
 		}
 
 		// Center the img on the x,y coordinates
 		w, h := float64(imgWidth), float64(imgHeight)
 		startX, startY := float64(node.X)-w/2, float64(node.Y)-h/2
 
-		if img != nil {
+		// 3. Draw the frame
+		if len(frames) > frameindex && frames[frameindex] != nil {
+			img := frames[frameindex]
 			op := &ebiten.DrawImageOptions{}
 
-			// Optional: Scale image to fit 80x50 exactly if it's too big/small
+			// Scaling to fit imgWidh X imgHeight respectively
 			bounds := img.Bounds()
 			scaleX := w / float64(bounds.Dx())
 			scaleY := h / float64(bounds.Dy())
@@ -71,8 +82,13 @@ func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 			op.GeoM.Translate(startX, startY)
 			screen.DrawImage(img, op)
 		} else {
-			// Fallback
-			vector.FillRect(screen, float32(startX), float32(startY), float32(w), float32(h), color.RGBA{100, 255, 250, 255}, true)
+			var fallbackColor color.RGBA
+			if isFailing {
+				fallbackColor = color.RGBA{255, 100, 100, 255} // Red fallback
+			} else {
+				fallbackColor = color.RGBA{100, 255, 250, 255} // Normal fallback
+			}
+			vector.FillRect(screen, float32(startX), float32(startY), float32(w), float32(h), fallbackColor, true)
 		}
 
 		// Stats for node
