@@ -6,3 +6,5 @@ GEMINI.md
 .gemini
 .zed
 build
+*.md
+!README.md

@@ -5,15 +5,9 @@ import (
 	"time"
 
 	"github.com/blackviking27/system-design-game/internal/sim"
+	"github.com/blackviking27/system-design-game/internal/types"
 	"github.com/hajimehoshi/ebiten/v2"
-)
-
-type GameState string
-
-const (
-	StatePlaying  GameState = "Playing"
-	StateGameOver GameState = "GameOver"
-	StateVictory  GameState = "Victory"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 // Gameplay scene
@@ -23,7 +17,7 @@ type GameplayScene struct {
 
 	// Game level
 	Level *Level
-	State GameState
+	State types.GameState
 
 	// level budget
 	CurrentBudget int
@@ -65,7 +59,7 @@ func NewGameplayScene(levelPath string) *GameplayScene {
 	return &GameplayScene{
 		Network:       network,
 		Level:         lvl,
-		State:         StatePlaying,
+		State:         types.StateDesigning,
 		CurrentBudget: lvl.StartingBudget,
 	}
 }
@@ -75,11 +69,24 @@ func (this *GameplayScene) Update() (Scene, error) {
 	this.HandleInput()
 
 	// only run the game if we are not in a terminal game state
-	if this.State != StatePlaying {
-		// Game restart logic
-		if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-			return &MainMenuScene{}, nil
+	// if this.State == types.StateGameOver || this.State == types.StateVictory {
+	// 	// Game restart logic
+	// 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+	// 		return &MainMenuScene{}, nil
+	// 	}
+	// 	return this, nil
+	// }
+
+	if this.State != types.StateSimulating {
+		// Phase transition shortcuts
+		if this.State == types.StateDesigning && inpututil.IsKeyJustPressed(ebiten.KeyS) {
+			this.State = types.StateSimulating
 		}
+
+		if (this.State == types.StateGameOver || this.State == types.StateVictory) && ebiten.IsKeyPressed(ebiten.KeyR) {
+			this.Reset()
+		}
+
 		return this, nil
 	}
 
@@ -113,6 +120,7 @@ func (this *GameplayScene) Update() (Scene, error) {
 		this.tickTimer = 0
 	}
 	return this, nil
+
 }
 
 func (this *GameplayScene) checkWinOrLoseCondition() {
@@ -124,12 +132,12 @@ func (this *GameplayScene) checkWinOrLoseCondition() {
 
 	// Loss condition: Too many packets dropped
 	if totalDroppedPacket >= this.Level.MaxDroppedPackets {
-		this.State = StateGameOver
+		this.State = types.StateGameOver
 	}
 
 	// Win condition: Survived for the duration
 	if int(this.Network.TickCount) >= this.Level.TargetUptimeTicks {
-		this.State = StateVictory
+		this.State = types.StateVictory
 	}
 
 }
@@ -138,4 +146,17 @@ func (this *GameplayScene) Draw(screen *ebiten.Image) {
 	this.screenWidth = screen.Bounds().Dx()
 	this.screenHeight = screen.Bounds().Dy()
 	DrawNetwork(screen, this)
+}
+
+func (this *GameplayScene) Reset() {
+	this.Network.TickCount = 0
+	this.tickTimer = 0
+	this.nextTrafficEventIdx = 0
+	this.currentTrafficRate = 0
+	this.State = types.StateDesigning
+
+	for _, node := range this.Network.Nodes {
+		node.ResetState()
+	}
+
 }

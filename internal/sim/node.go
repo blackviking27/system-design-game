@@ -53,6 +53,14 @@ func (this *Node) LinkTo(dest *Node) {
 	this.Outbound = append(this.Outbound, dest)
 }
 
+// Reset node state
+func (this *Node) ResetState() {
+	this.Queue = make([]*Packet, 0)
+	this.ProcessedCount = 0
+	this.DroppedCount = 0
+	this.roundRobinIdx = 0
+}
+
 // Node component catalogue type
 type NodeTemplate struct {
 	Type         NodeType
