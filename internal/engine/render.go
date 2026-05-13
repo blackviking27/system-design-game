@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"image/color"
+	"math"
 	"time"
 
 	"github.com/blackviking27/system-design-game/internal/types"
@@ -17,20 +18,74 @@ const (
 	imgHeight int = 64
 )
 
+func drawConnectionLine(screen *ebiten.Image, x1, y1, x2, y2 float32, isSimulating bool, color color.RGBA) {
+	//1. Drawing the baseline
+	vector.StrokeLine(screen, x1, y1, x2, y2, 2, color, true)
+
+	// 2. Vector match for direction and midpoint
+	dx := x2 - x1
+	dy := y2 - y1
+	dist := float32(math.Sqrt(float64(dx*dx + dy*dy)))
+
+	if dist < 1 {
+		return
+	}
+
+	ux := dx / dist
+	uy := dy / dist
+
+	midX := x1 + dx/2
+	midY := y1 + dy/2
+
+	// 3. Draw direction arrows
+	arrowSize := float32(8)
+	px := -uy
+	py := ux
+
+	// Arrow head points (V shape)
+	ax1 := midX - ux*arrowSize + px*arrowSize*0.6
+	ay1 := midY - uy*arrowSize + py*arrowSize*0.6
+	ax2 := midX - ux*arrowSize - px*arrowSize*0.6
+	ay2 := midY - uy*arrowSize - py*arrowSize*0.6
+
+	vector.StrokeLine(screen, midX, midY, ax1, ay1, 2, color, true)
+	vector.StrokeLine(screen, midX, midY, ax2, ay2, 2, color, true)
+
+	// 4. Draw Flow Animation (Pulses)
+	if isSimulating {
+		// Create 3 pulses moving along the line
+		timeScale := float32(time.Now().UnixMilli()%1000) / 1000.0 // 0.0 to 1.0
+		for i := 0; i < 3; i++ {
+			t := timeScale + float32(i)/3.0
+			if t > 1.0 {
+				t -= 1.0
+			}
+			px := x1 + dx*t
+			py := y1 + dy*t
+			vector.FillCircle(screen, px, py, 3, types.ColorTextYellow, true)
+		}
+	}
+
+}
+
 func DrawNetwork(screen *ebiten.Image, game *GameplayScene) {
 	// Fill the background
 	screen.Fill(types.ColorBackground)
 
+	isSimulationRunning := game.State == types.StateSimulating
+
 	// Draw links (lines) first so they render underneath nodes
 	for _, node := range game.Network.Nodes {
 		for _, out := range node.Outbound {
-			vector.StrokeLine(screen, float32(node.X), float32(node.Y), float32(out.X), float32(out.Y), 2, types.ColorLine, true)
+			// vector.StrokeLine(screen, float32(node.X), float32(node.Y), float32(out.X), float32(out.Y), 2, types.ColorLine, true)
+			drawConnectionLine(screen, float32(node.X), float32(node.Y), float32(out.X), float32(out.Y), isSimulationRunning, types.ColorLine)
 		}
 	}
 
 	// Draw in-progress link
 	if game.linkingNode != nil {
-		vector.StrokeLine(screen, float32(game.linkingNode.X), float32(game.linkingNode.Y), float32(game.mouseX), float32(game.mouseY), 2, types.ColorLineDrawing, true)
+		// vector.StrokeLine(screen, float32(game.linkingNode.X), float32(game.linkingNode.Y), float32(game.mouseX), float32(game.mouseY), 2, types.ColorLineDrawing, true)
+		drawConnectionLine(screen, float32(game.linkingNode.X), float32(game.linkingNode.Y), float32(game.mouseX), float32(game.mouseY), false, types.ColorLine)
 	}
 
 	// Draw nodes(servers)
