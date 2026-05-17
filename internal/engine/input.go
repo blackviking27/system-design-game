@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"fmt"
-
 	"github.com/blackviking27/system-design-game/internal/sim"
 	"github.com/blackviking27/system-design-game/internal/types"
 	"github.com/blackviking27/system-design-game/internal/ui"
@@ -37,9 +35,8 @@ func (this *GameplayScene) HandleInput() {
 						this.CurrentBudget -= template.Cost
 
 						// Generate unique id based on map size
-						id := fmt.Sprintf("%s-%d", template.Type, len(this.Network.Nodes)+1)
-						newNode := sim.NewNode(id, template.Type, template.MaxRam, template.ProcessPower, template.Cost)
-						newNode.X, newNode.Y = float64(x), float64(y)
+
+						newNode := this.CreateNodeFromTemplate(string(template.Type), float64(x), float64(y))
 
 						this.draggingNode = newNode
 						this.dragOffsetX, this.dragOffsetY = 0, 0

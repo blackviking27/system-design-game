@@ -40,7 +40,6 @@ type GameplayScene struct {
 }
 
 func NewGameplayScene(levelPath string) *GameplayScene {
-
 	// Load level json data
 	lvl, err := LoadLevel(levelPath)
 	if err != nil {
@@ -50,32 +49,28 @@ func NewGameplayScene(levelPath string) *GameplayScene {
 	// Initializing the sim network
 	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
 
-	// Create a load balancer
-	lb := sim.NewNode("LB-Main", sim.TypeLoadBalancer, 500, 500, 0)
-	lb.X, lb.Y = 400, 150
-	network.Nodes[lb.ID] = lb
-
 	// Creating the engine game wrapper
-	return &GameplayScene{
+	scene := &GameplayScene{
 		Network:       network,
 		Level:         lvl,
 		State:         types.StateDesigning,
 		CurrentBudget: lvl.StartingBudget,
 	}
+
+	// Create a load balancer
+	lb := scene.CreateNodeFromTemplate(string(sim.TypeLoadBalancer), 400, 150)
+	network.Nodes[lb.ID] = lb
+
+	return scene
+}
+
+func generateId() string {
+	return fmt.Sprintf("node-%v", time.Now().UnixNano())
 }
 
 func (this *GameplayScene) Update() (Scene, error) {
 	// Handling user input
 	this.HandleInput()
-
-	// only run the game if we are not in a terminal game state
-	// if this.State == types.StateGameOver || this.State == types.StateVictory {
-	// 	// Game restart logic
-	// 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-	// 		return &MainMenuScene{}, nil
-	// 	}
-	// 	return this, nil
-	// }
 
 	if this.State != types.StateSimulating {
 		// Phase transition shortcuts
@@ -159,4 +154,33 @@ func (this *GameplayScene) Reset() {
 		node.ResetState()
 	}
 
+}
+
+func (this *GameplayScene) CreateNodeFromTemplate(templateName string, x, y float64) *sim.Node {
+	// 1. Get blueprint from loaded level data
+	template, exists := this.Level.NodeTemplates[templateName]
+	if !exists {
+		return nil
+	}
+
+	// 2. Create the node object
+	node := sim.NewNode(
+		generateId(),
+		template.Type,
+		100,
+		5,
+		100,
+	)
+
+	node.X, node.Y = x, y
+
+	// 3. Assigning workflow
+	node.Processor = &sim.WorkflowProcessor{
+		Workflows: template.Workflows,
+	}
+
+	// 4. Assign router
+	node.Router = &sim.RoundRobinRouter{}
+
+	return node
 }

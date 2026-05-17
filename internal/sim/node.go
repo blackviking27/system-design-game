@@ -33,18 +33,29 @@ type Node struct {
 
 	// Cost of the system
 	Cost int
+
+	WaitingRoom   map[string]*Packet // Key: TraceId
+	MaxConnection int                // To simulate thread exhaustion
+	State         map[string]any     // Presistent key / value storage
+
+	// Pluggable behavior
+	Processor Processor
+	Router    Router
 }
 
 // Create a new node
 func NewNode(id string, t NodeType, maxRam, processPower, cost int) *Node {
 	return &Node{
-		ID:           id,
-		Type:         t,
-		MaxRam:       maxRam,
-		ProcessPower: processPower,
-		Queue:        make([]*Packet, 0),
-		Outbound:     make([]*Node, 0),
-		Cost:         cost,
+		ID:            id,
+		Type:          t,
+		MaxRam:        maxRam,
+		ProcessPower:  processPower,
+		Queue:         make([]*Packet, 0),
+		WaitingRoom:   make(map[string]*Packet, 0),
+		MaxConnection: maxRam, // Default Limit
+		State:         make(map[string]interface{}, 0),
+		Outbound:      make([]*Node, 0),
+		Cost:          cost,
 	}
 }
 

@@ -9,6 +9,11 @@ const (
 )
 
 type Packet struct {
-	ID     string
-	Status PacketStatus
+	ID           string
+	TraceId      string // Links request and responses together
+	OriginNodeId string // Allows a response to finds its way home
+	Status       PacketStatus
+	Type         string         // Trigger for workflow steps
+	Payload      map[string]any // Simulated data
+	Metadata     map[string]int // Latency, hop count etc
 }
