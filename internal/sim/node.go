@@ -72,8 +72,9 @@ func (this *Node) ResetState() {
 	this.roundRobinIdx = 0
 }
 
-// Node component catalogue type
-type NodeTemplate struct {
+// Catalogue node type
+type CatalogNodeTemplate struct {
+	ID           string
 	Type         NodeType
 	Name         string
 	Cost         int
@@ -81,12 +82,20 @@ type NodeTemplate struct {
 	ProcessPower int
 }
 
-var Catalog = []NodeTemplate{
-	{Type: TypeServer, Name: "Lite server\n(2 pkts/tick)", Cost: 100, MaxRam: 10, ProcessPower: 2},
-	{Type: TypeServer, Name: "Heavy server\n(5 pkts/tick)", Cost: 100, MaxRam: 50, ProcessPower: 5},
-	{Type: TypeLoadBalancer, Name: "Load Balancer", Cost: 500, MaxRam: 5000, ProcessPower: 100},
+var Catalog = []CatalogNodeTemplate{
+	{ID: "lite_server", Type: TypeServer, Name: "Lite server\n(4 pkts/tick)", Cost: 100, MaxRam: 30, ProcessPower: 4},
+	{ID: "heavy_server", Type: TypeServer, Name: "Heavy server\n(10 pkts/tick)", Cost: 250, MaxRam: 100, ProcessPower: 10},
+	{ID: "load_blancer", Type: TypeLoadBalancer, Name: "Load Balancer\n(40 pkts/tick)", Cost: 300, MaxRam: 200, ProcessPower: 40},
+	{ID: "message_queue", Type: TypeMessageQueue, Name: "Message Queue\n(Buffer)", Cost: 300, MaxRam: 800, ProcessPower: 12},
+	{ID: "data_base", Type: TypeDatabase, Name: "Data Base\n(SQL)", Cost: 500, MaxRam: 300, ProcessPower: 3},
+	{ID: "cache", Type: TypeCache, Name: "Cache\n(Redis)", Cost: 250, MaxRam: 150, ProcessPower: 25},
+}
 
-	{Type: TypeMessageQueue, Name: "Message Queue\n(Buffer)", Cost: 250, MaxRam: 1000, ProcessPower: 5},
-	{Type: TypeDatabase, Name: "Data Base\n(SQL)", Cost: 400, MaxRam: 5000, ProcessPower: 1},
-	{Type: TypeCache, Name: "Cache\n(Redis)", Cost: 200, MaxRam: 20, ProcessPower: 15},
+func GetCatalogTemplateForType(t NodeType) (CatalogNodeTemplate, bool) {
+	for _, template := range Catalog {
+		if template.Type == t {
+			return template, true
+		}
+	}
+	return CatalogNodeTemplate{}, false
 }

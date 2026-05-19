@@ -132,27 +132,26 @@ func (this *GameplayScene) Reset() {
 
 }
 
-func (this *GameplayScene) CreateNodeFromTemplate(templateName string, x, y float64) *sim.Node {
-	// 1. Get blueprint from loaded level data
-	template, exists := this.Level.NodeTemplates[templateName]
+func (this *GameplayScene) CreateNodeFromTemplate(catalogNodeTemplate sim.CatalogNodeTemplate, x, y float64) *sim.Node {
+	// 1. Get node workflow from loaded level data
+	workflowForNode, exists := this.Level.NodeTemplates[string(catalogNodeTemplate.Type)]
 	if !exists {
 		return nil
 	}
 
-	// 2. Create the node object
 	node := sim.NewNode(
 		generateId(),
-		template.Type,
-		100,
-		5,
-		100,
+		catalogNodeTemplate.Type,
+		catalogNodeTemplate.MaxRam,
+		catalogNodeTemplate.ProcessPower,
+		catalogNodeTemplate.Cost,
 	)
 
 	node.X, node.Y = x, y
 
 	// 3. Assigning workflow
 	node.Processor = &sim.WorkflowProcessor{
-		Workflows: template.Workflows,
+		Workflows: workflowForNode.Workflows,
 	}
 
 	// 4. Assign router
@@ -191,8 +190,12 @@ func NewGameplayScene(levelPath string) *GameplayScene {
 		CurrentBudget: lvl.StartingBudget,
 	}
 
+	lbCatalogNode, exists := sim.GetCatalogTemplateForType(sim.TypeLoadBalancer)
+	if !exists {
+		panic("No Loadbalancer catalog node found")
+	}
 	// Create a load balancer
-	lb := scene.CreateNodeFromTemplate(string(sim.TypeLoadBalancer), 400, 150)
+	lb := scene.CreateNodeFromTemplate(lbCatalogNode, 400, 150)
 	network.Nodes[lb.ID] = lb
 
 	return scene

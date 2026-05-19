@@ -34,9 +34,7 @@ func (this *GameplayScene) HandleInput() {
 						// Buying the item
 						this.CurrentBudget -= template.Cost
 
-						// Generate unique id based on map size
-
-						newNode := this.CreateNodeFromTemplate(string(template.Type), float64(x), float64(y))
+						newNode := this.CreateNodeFromTemplate(template, float64(x), float64(y))
 
 						this.draggingNode = newNode
 						this.dragOffsetX, this.dragOffsetY = 0, 0
