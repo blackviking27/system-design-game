@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/blackviking27/system-design-game/internal/sim"
@@ -25,6 +26,7 @@ type GameplayScene struct {
 	// Traffic rate
 	currentTrafficRate  int
 	nextTrafficEventIdx int
+	currentPacketMix    []PacketMixEntry
 
 	// Game controls
 	draggingNode *sim.Node
@@ -37,35 +39,6 @@ type GameplayScene struct {
 	// Screen dimensions
 	screenWidth  int
 	screenHeight int
-}
-
-func NewGameplayScene(levelPath string) *GameplayScene {
-	// Load level json data
-	lvl, err := LoadLevel(levelPath)
-	if err != nil {
-		panic(err)
-	}
-
-	// Initializing the sim network
-	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
-
-	// Creating the engine game wrapper
-	scene := &GameplayScene{
-		Network:       network,
-		Level:         lvl,
-		State:         types.StateDesigning,
-		CurrentBudget: lvl.StartingBudget,
-	}
-
-	// Create a load balancer
-	lb := scene.CreateNodeFromTemplate(string(sim.TypeLoadBalancer), 400, 150)
-	network.Nodes[lb.ID] = lb
-
-	return scene
-}
-
-func generateId() string {
-	return fmt.Sprintf("node-%v", time.Now().UnixNano())
 }
 
 func (this *GameplayScene) Update() (Scene, error) {
@@ -92,7 +65,9 @@ func (this *GameplayScene) Update() (Scene, error) {
 
 		// Dynamic traffic rate
 		for this.nextTrafficEventIdx < len(this.Level.TrafficPattern) && this.Network.TickCount > uint64(this.Level.TrafficPattern[this.nextTrafficEventIdx].StartTick) {
-			this.currentTrafficRate = this.Level.TrafficPattern[this.nextTrafficEventIdx].Rate
+			trafficLevel := this.Level.TrafficPattern[this.nextTrafficEventIdx]
+			this.currentTrafficRate = trafficLevel.Rate
+			this.currentPacketMix = trafficLevel.PacketMix
 			this.nextTrafficEventIdx++
 		}
 
@@ -105,7 +80,7 @@ func (this *GameplayScene) Update() (Scene, error) {
 		for _, node := range this.Network.Nodes {
 			if node.Type == sim.TypeLoadBalancer {
 				for i := 0; i < trafficRate; i++ {
-					node.Queue = append(node.Queue, &sim.Packet{ID: fmt.Sprintf("pkt-%v", time.Now().Unix()/int64(time.Microsecond))})
+					node.Queue = append(node.Queue, this.GeneratePacket())
 				}
 			}
 		}
@@ -148,6 +123,7 @@ func (this *GameplayScene) Reset() {
 	this.tickTimer = 0
 	this.nextTrafficEventIdx = 0
 	this.currentTrafficRate = 0
+	this.currentPacketMix = nil
 	this.State = types.StateDesigning
 
 	for _, node := range this.Network.Nodes {
@@ -183,4 +159,72 @@ func (this *GameplayScene) CreateNodeFromTemplate(templateName string, x, y floa
 	node.Router = &sim.RoundRobinRouter{}
 
 	return node
+}
+
+func (this *GameplayScene) GeneratePacket() *sim.Packet {
+	id := generateId()
+
+	return &sim.Packet{
+		ID:       id,
+		TraceId:  id,
+		Type:     pickPacketType(this.currentPacketMix),
+		Payload:  make(map[string]any),
+		Metadata: make(map[string]int),
+	}
+}
+
+func NewGameplayScene(levelPath string) *GameplayScene {
+	// Load level json data
+	lvl, err := LoadLevel(levelPath)
+	if err != nil {
+		panic(err)
+	}
+
+	// Initializing the sim network
+	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
+
+	// Creating the engine game wrapper
+	scene := &GameplayScene{
+		Network:       network,
+		Level:         lvl,
+		State:         types.StateDesigning,
+		CurrentBudget: lvl.StartingBudget,
+	}
+
+	// Create a load balancer
+	lb := scene.CreateNodeFromTemplate(string(sim.TypeLoadBalancer), 400, 150)
+	network.Nodes[lb.ID] = lb
+
+	return scene
+}
+
+func generateId() string {
+	return fmt.Sprintf("node-%v", time.Now().UnixNano())
+}
+
+func pickPacketType(packetMix []PacketMixEntry) string {
+	totalWeight := 0
+	for _, entry := range packetMix {
+		if entry.Weight > 0 {
+			totalWeight += entry.Weight
+		}
+	}
+
+	if totalWeight == 0 {
+		return ""
+	}
+
+	pick := rand.Intn(totalWeight)
+	cumulative := 0
+	for _, entry := range packetMix {
+		if entry.Weight <= 0 {
+			continue
+		}
+
+		cumulative += entry.Weight
+		if pick < cumulative {
+			return entry.Type
+		}
+	}
+	return ""
 }

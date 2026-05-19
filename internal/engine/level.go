@@ -7,9 +7,15 @@ import (
 	"github.com/blackviking27/system-design-game/internal/sim"
 )
 
+type PacketMixEntry struct {
+	Type   string `json:"type"`
+	Weight int    `json:"weight"`
+}
+
 type TrafficEvent struct {
-	StartTick int `json:"start_tick"`
-	Rate      int `json:"rate"`
+	StartTick int              `json:"start_tick"`
+	Rate      int              `json:"rate"`
+	PacketMix []PacketMixEntry `json:"packet_mix"`
 }
 
 type NodeTemplate struct {

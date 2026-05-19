@@ -24,7 +24,7 @@ func (this *MainMenuScene) Update() (Scene, error) {
 		}
 		bx, by, bw, bh := sw/2-100, sh/2-30, 200, 60
 
-		currentLevel := "levels/01.json"
+		currentLevel := "levels/tiny_url.json"
 		if x >= bx && x <= bx+bw && y >= by && y <= by+bh {
 			return NewGameplayScene(currentLevel), nil
 		}
