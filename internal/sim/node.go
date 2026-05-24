@@ -67,6 +67,8 @@ func (this *Node) LinkTo(dest *Node) {
 // Reset node state
 func (this *Node) ResetState() {
 	this.Queue = make([]*Packet, 0)
+	this.WaitingRoom = make(map[string]*Packet, 0)
+	this.State = make(map[string]any, 0)
 	this.ProcessedCount = 0
 	this.DroppedCount = 0
 	this.roundRobinIdx = 0

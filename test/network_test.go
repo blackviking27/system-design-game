@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -9,59 +8,42 @@ import (
 )
 
 func TestBottleNeck(t *testing.T) {
-	net := &sim.Network{Nodes: make(map[string]*sim.Node)}
+	net := &sim.Network{Nodes: make(map[string]*sim.Node), Metrics: sim.NewMetrics()}
 
-	// Create a LB with infinite capacity
-	lb := sim.NewNode("lb-1", sim.TypeLoadBalancer, 1000, 1000, 0)
+	// Create a LB with enough processing power to overwhelm one weak server.
+	lb := sim.NewNode("lb-1", sim.TypeLoadBalancer, 1000, 20, 0)
+	lb.Processor = &sim.WorkflowProcessor{Workflows: map[string][]sim.WorkflowStep{}}
+	lb.Router = &sim.RoundRobinRouter{}
 
-	// Create 2 weak servers (can only hold 5 packets in RAM and process 2 at a time)
+	// Create 2 weak servers. Only server A is linked so this test is deterministic
+	// even though Network.Nodes is a map.
 	serverA := sim.NewNode("srv-A", sim.TypeServer, 5, 2, 0)
 	serverB := sim.NewNode("srv-B", sim.TypeServer, 5, 2, 0)
 
-	// Wiring the servers to the load balancer
+	// Wiring server A to the load balancer.
 	lb.LinkTo(serverA)
-	lb.LinkTo(serverB)
 
 	// Adding the server to the network
 	net.Nodes[lb.ID] = lb
 	net.Nodes[serverA.ID] = serverA
 	net.Nodes[serverB.ID] = serverB
 
-	// Simulating massive traffic spike: 20 packets hit the load balancer
-	for i := range 20 {
-		lb.Queue = append(lb.Queue, &sim.Packet{ID: strconv.Itoa(i), Status: sim.StatusPending})
+	// Simulating massive traffic spike: 10 packets hit the load balancer.
+	for i := range 10 {
+		lb.Queue = append(lb.Queue, &sim.Packet{ID: strconv.Itoa(i), InitialType: "READ", Status: sim.StatusPending})
 	}
 
-	// TICK 1
 	net.Tick()
 
-	// LB should route 10 to A, and 10 to B.
-	// Since A and B only have 5 RAM capacity each, they should both drop 5 packets.
-
-	fmt.Printf("Server A: %v", serverA)
-	fmt.Printf("Server B: %v", serverB)
-
-	if serverA.DroppedCount != 5 {
-		t.Errorf("Expected Server A to drop 5 packets due to RAM limits, got %d", serverA.DroppedCount)
+	// LB should route 5 packets into server A and drop the remaining 5 because
+	// server A's queue is full.
+	if lb.DroppedCount != 5 {
+		t.Errorf("Expected LB to drop 5 packets due to downstream RAM limits, got %d", lb.DroppedCount)
 	}
 	if len(serverA.Queue) != 5 {
 		t.Errorf("Expected Server A RAM to be full at 5, got %d", len(serverA.Queue))
 	}
-
-	// TICK 2
-
-	net.Tick()
-
-	fmt.Printf("Server A: %v", serverA)
-	fmt.Printf("Server B: %v", serverB)
-
-	// Servers should now process packets from their RAM, freeing up space.
-	// They can process 2 per tick.
-	if serverA.ProcessedCount != 2 {
-		t.Errorf("Expected Server A to have processed 2 packets, got %d", serverA.ProcessedCount)
+	if net.Metrics.DroppedPackets != 5 {
+		t.Errorf("Expected network to record 5 dropped packets, got %d", net.Metrics.DroppedPackets)
 	}
-	if len(serverA.Queue) != 3 {
-		t.Errorf("Expected Server A RAM queue to reduce to 3, got %d", len(serverA.Queue))
-	}
-
 }

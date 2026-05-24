@@ -93,7 +93,7 @@ func (this *GameplayScene) Update() (Scene, error) {
 
 }
 
-func (this *GameplayScene) checkWinOrLoseCondition() {
+func (this *GameplayScene) legacyCheckWinOrLoseCondition() {
 	// Counting total dropped packets in the current state of game
 	totalDroppedPacket := 0
 	for _, node := range this.Network.Nodes {
@@ -108,6 +108,145 @@ func (this *GameplayScene) checkWinOrLoseCondition() {
 	// Win condition: Survived for the duration
 	if int(this.Network.TickCount) >= this.Level.TargetUptimeTicks {
 		this.State = types.StateVictory
+	}
+
+}
+
+func (this *GameplayScene) evaluateCondition(condition Condition) bool {
+	if condition.AfterTick > 0 && int(this.Network.TickCount) < condition.AfterTick {
+		return false
+	}
+
+	actual, ok := this.metricValue(condition)
+	if !ok {
+		return false
+	}
+	return compareMetric(actual, condition.Operator, condition.Value)
+}
+
+func (this *GameplayScene) checkForLoss(conditions []Condition) bool {
+	for _, condition := range conditions {
+		if this.evaluateCondition(condition) {
+			return true
+		}
+	}
+	return false
+}
+
+func (this *GameplayScene) metricValue(condition Condition) (float64, bool) {
+	metrics := this.Network.Metrics
+
+	switch condition.Metric {
+	case "uptime_ticks":
+		return float64(this.Network.TickCount), true
+	case "generated_packets":
+		if condition.PacketType != "" {
+			return float64(metrics.GeneratedByType[condition.PacketType]), true
+		}
+		return float64(metrics.GeneratedPackets), true
+	case "completed_packets":
+		if condition.PacketType != "" {
+			return float64(metrics.CompletedByType[condition.PacketType]), true
+		}
+		return float64(metrics.CompletedPackets), true
+	case "dropped_packets":
+		if condition.PacketType != "" {
+			return float64(metrics.DroppedByType[condition.PacketType]), true
+		}
+		return float64(metrics.DroppedPackets), true
+	case "processed_packets":
+		return float64(metrics.ProcessedPackets), true
+	case "success_rate":
+		generated := metrics.GeneratedPackets
+		completed := metrics.CompletedPackets
+
+		if condition.PacketType != "" {
+			generated = metrics.GeneratedByType[condition.PacketType]
+			completed = metrics.CompletedByType[condition.PacketType]
+		}
+
+		if generated == 0 {
+			return 0, true
+		}
+		return float64(completed) / float64(generated), true
+	case "drop_rate":
+		generated := metrics.GeneratedPackets
+		dropped := metrics.DroppedPackets
+
+		if condition.PacketType != "" {
+			generated = metrics.GeneratedByType[condition.PacketType]
+			dropped = metrics.DroppedByType[condition.PacketType]
+		}
+
+		if generated == 0 {
+			return 0, true
+		}
+		return float64(dropped) / float64(generated), true
+	case "avg_latency_ticks":
+		if condition.PacketType != "" {
+			completed := metrics.CompletedByType[condition.PacketType]
+			if completed == 0 {
+				return 0, true
+			}
+			return float64(metrics.TotalLatencyTicksByType[condition.PacketType]) / float64(completed), true
+		}
+
+		if metrics.CompletedPackets == 0 {
+			return 0, true
+		}
+		return float64(metrics.TotalLatencyTicks) / float64(metrics.CompletedPackets), true
+	case "queue_depth":
+		total := 0
+		for _, node := range this.Network.Nodes {
+			total += len(node.Queue)
+		}
+		return float64(total), true
+	default:
+		return 0, false
+	}
+}
+
+func compareMetric(actual float64, operator string, expected float64) bool {
+	switch operator {
+	case ">":
+		return actual > expected
+	case ">=":
+		return actual >= expected
+	case "<":
+		return actual < expected
+	case "<=":
+		return actual <= expected
+	case "==":
+		return actual == expected
+	case "!=":
+		return actual != expected
+	default:
+		return false
+	}
+}
+
+func (this *GameplayScene) checkForWin(conditions []Condition) bool {
+	for _, condition := range conditions {
+		if !this.evaluateCondition(condition) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *GameplayScene) checkWinOrLoseCondition() {
+	if this.checkForLoss(this.Level.LossConditions) {
+		this.State = types.StateGameOver
+		return
+	}
+
+	if len(this.Level.WinConditions) > 0 && this.checkForWin(this.Level.WinConditions) {
+		this.State = types.StateVictory
+		return
+	}
+
+	if len(this.Level.WinConditions) == 0 {
+		this.legacyCheckWinOrLoseCondition()
 	}
 
 }
@@ -130,6 +269,8 @@ func (this *GameplayScene) Reset() {
 		node.ResetState()
 	}
 
+	// Resetting the metrics
+	this.Network.Metrics = sim.NewMetrics()
 }
 
 func (this *GameplayScene) CreateNodeFromTemplate(catalogNodeTemplate sim.CatalogNodeTemplate, x, y float64) *sim.Node {
@@ -163,12 +304,18 @@ func (this *GameplayScene) CreateNodeFromTemplate(catalogNodeTemplate sim.Catalo
 func (this *GameplayScene) GeneratePacket() *sim.Packet {
 	id := generateId()
 
+	// Add metrics to the network w.r.t packet generated
+	packetType := pickPacketType(this.currentPacketMix)
+	this.Network.RecordGenerated(packetType)
+
 	return &sim.Packet{
-		ID:       id,
-		TraceId:  id,
-		Type:     pickPacketType(this.currentPacketMix),
-		Payload:  make(map[string]any),
-		Metadata: make(map[string]int),
+		ID:          id,
+		TraceId:     id,
+		Type:        packetType,
+		InitialType: packetType,
+		CreatedAt:   this.Network.TickCount,
+		Payload:     make(map[string]any),
+		Metadata:    make(map[string]int),
 	}
 }
 
@@ -180,7 +327,15 @@ func NewGameplayScene(levelPath string) *GameplayScene {
 	}
 
 	// Initializing the sim network
-	network := &sim.Network{Nodes: make(map[string]*sim.Node)}
+	network := &sim.Network{
+		Nodes:               make(map[string]*sim.Node),
+		Metrics:             sim.NewMetrics(),
+		TerminalPacketTypes: make(map[string]bool),
+	}
+
+	for _, terminalPackets := range lvl.TerminalPacketTypes {
+		network.TerminalPacketTypes[terminalPackets] = true
+	}
 
 	// Creating the engine game wrapper
 	scene := &GameplayScene{

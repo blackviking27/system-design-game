@@ -16,4 +16,6 @@ type Packet struct {
 	Type         string         // Trigger for workflow steps
 	Payload      map[string]any // Simulated data
 	Metadata     map[string]int // Latency, hop count etc
+	InitialType  string
+	CreatedAt    uint64
 }
