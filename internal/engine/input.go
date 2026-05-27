@@ -98,6 +98,7 @@ func (this *GameplayScene) HandleInput() {
 				targetNode := this.getNodeAt(x, y)
 				if targetNode != nil && targetNode != this.linkingNode {
 					this.linkingNode.LinkTo(targetNode)
+					targetNode.LinkTo(this.linkingNode)
 				}
 				this.linkingNode = nil // Cancel the draw state
 			}

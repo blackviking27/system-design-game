@@ -7,14 +7,16 @@ type Processor interface {
 type Action string
 
 const (
-	ActionTransform Action = "TRANSFORM"
-	ActionDelay     Action = "DELAY"
-	ActionFetch     Action = "FETCH_STATE"
-	ActionStore     Action = "STORE_STATE"
-	ActionForward   Action = "FORWARD"
-	ActionReturn    Action = "RETURN"
-	ActionBlock     Action = "BLOCK"
-	ActionResume    Action = "RESUME"
+	ActionTransform          Action = "TRANSFORM"
+	ActionTransformIfFound   Action = "TRANSFORM_IF_FOUND"
+	ActionTransformIfMissing Action = "TRANSFORM_IF_MISSING"
+	ActionDelay              Action = "DELAY"
+	ActionFetch              Action = "FETCH_STATE"
+	ActionStore              Action = "STORE_STATE"
+	ActionForward            Action = "FORWARD"
+	ActionReturn             Action = "RETURN"
+	ActionBlock              Action = "BLOCK"
+	ActionResume             Action = "RESUME"
 )
 
 type WorkflowStep struct {
@@ -28,6 +30,8 @@ type WorkflowProcessor struct {
 }
 
 func (this *WorkflowProcessor) Process(node *Node, packet *Packet) ([]*Packet, error) {
+	packet.RouteTarget = ""
+
 	steps, ok := this.Workflows[packet.Type]
 	if !ok {
 		return []*Packet{packet}, nil
@@ -41,14 +45,29 @@ func (this *WorkflowProcessor) Process(node *Node, packet *Packet) ([]*Packet, e
 		switch step.Action {
 		case string(ActionTransform):
 			packet.Type = step.Target
+		case string(ActionTransformIfFound):
+			if packet.Metadata != nil && packet.Metadata["state_found"] == 1 {
+				packet.Type = step.Target
+			}
+		case string(ActionTransformIfMissing):
+			if packet.Metadata == nil || packet.Metadata["state_found"] == 0 {
+				packet.Type = step.Target
+			}
 		case string(ActionStore):
 			node.State[step.Target] = packet.Payload
 		case string(ActionFetch):
+			if packet.Metadata == nil {
+				packet.Metadata = make(map[string]int)
+			}
+
 			if val, exists := node.State[step.Target]; exists {
 				if packet.Payload == nil {
 					packet.Payload = make(map[string]any)
 				}
 				packet.Payload["fetched_data"] = val
+				packet.Metadata["state_found"] = 1
+			} else {
+				packet.Metadata["state_found"] = 0
 			}
 		case string(ActionBlock):
 			node.WaitingRoom[packet.TraceId] = packet
@@ -59,6 +78,7 @@ func (this *WorkflowProcessor) Process(node *Node, packet *Packet) ([]*Packet, e
 				outbound = append(outbound, original)
 			}
 		case string(ActionForward):
+			packet.RouteTarget = step.Target
 			outbound = append(outbound, packet)
 		}
 	}

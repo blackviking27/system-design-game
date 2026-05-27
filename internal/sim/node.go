@@ -61,6 +61,11 @@ func NewNode(id string, t NodeType, maxRam, processPower, cost int) *Node {
 
 // Function to add downstream node
 func (this *Node) LinkTo(dest *Node) {
+	for _, outbound := range this.Outbound {
+		if outbound == dest {
+			return
+		}
+	}
 	this.Outbound = append(this.Outbound, dest)
 }
 
