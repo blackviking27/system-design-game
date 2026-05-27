@@ -349,8 +349,8 @@ func NewGameplayScene(levelPath string) *GameplayScene {
 	if !exists {
 		panic("No Loadbalancer catalog node found")
 	}
-	// Create a load balancer
-	lb := scene.CreateNodeFromTemplate(lbCatalogNode, 400, 150)
+	// Create a load balancer on the left, clear of the HUD and bottom tray.
+	lb := scene.CreateNodeFromTemplate(lbCatalogNode, 180, 320)
 	network.Nodes[lb.ID] = lb
 
 	return scene
