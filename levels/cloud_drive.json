@@ -1,0 +1,66 @@
+{
+  "id": "cloud_drive",
+  "name": "Level 4: Dropbox or Google Drive",
+  "description": "Design a cloud file storage service with uploads, downloads, and metadata sync.",
+  "starting_budget": 2400,
+  "target_uptime_ticks": 1400,
+  "max_dropped_packets": 130,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 3,
+      "packet_mix": [
+        { "type": "DRIVE_FILE_DOWNLOAD", "weight": 55 },
+        { "type": "DRIVE_FILE_UPLOAD", "weight": 30 },
+        { "type": "DRIVE_METADATA_SYNC", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 450,
+      "rate": 6,
+      "packet_mix": [
+        { "type": "DRIVE_FILE_DOWNLOAD", "weight": 50 },
+        { "type": "DRIVE_FILE_UPLOAD", "weight": 35 },
+        { "type": "DRIVE_METADATA_SYNC", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 900,
+      "rate": 10,
+      "packet_mix": [
+        { "type": "DRIVE_FILE_DOWNLOAD", "weight": 45 },
+        { "type": "DRIVE_FILE_UPLOAD", "weight": 40 },
+        { "type": "DRIVE_METADATA_SYNC", "weight": 15 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1400 },
+    { "metric": "completed_packets", "operator": ">=", "value": 600 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.78 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.11 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "DRIVE_FILE_UPLOAD",
+      "operator": ">=",
+      "value": 180
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 130 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.38,
+      "after_tick": 550
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "metrics_logging",
+  "name": "Level 9: Metrics Logging and Aggregation",
+  "description": "Design a distributed metrics ingestion and aggregation system.",
+  "starting_budget": 2800,
+  "target_uptime_ticks": 1600,
+  "max_dropped_packets": 200,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 5,
+      "packet_mix": [
+        { "type": "METRIC_WRITE", "weight": 85 },
+        { "type": "METRIC_QUERY", "weight": 10 },
+        { "type": "ALERT_EVALUATION", "weight": 5 }
+      ]
+    },
+    {
+      "start_tick": 450,
+      "rate": 12,
+      "packet_mix": [
+        { "type": "METRIC_WRITE", "weight": 85 },
+        { "type": "METRIC_QUERY", "weight": 10 },
+        { "type": "ALERT_EVALUATION", "weight": 5 }
+      ]
+    },
+    {
+      "start_tick": 1050,
+      "rate": 18,
+      "packet_mix": [
+        { "type": "METRIC_WRITE", "weight": 80 },
+        { "type": "METRIC_QUERY", "weight": 12 },
+        { "type": "ALERT_EVALUATION", "weight": 8 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1600 },
+    { "metric": "completed_packets", "operator": ">=", "value": 1100 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.74 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.14 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "METRIC_WRITE",
+      "operator": ">=",
+      "value": 850
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 200 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.32,
+      "after_tick": 650
+    }
+  ]
+}

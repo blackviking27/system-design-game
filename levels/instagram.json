@@ -1,0 +1,66 @@
+{
+  "id": "instagram",
+  "name": "Level 3: Instagram",
+  "description": "Design a photo-sharing feed with reads, uploads, and likes.",
+  "starting_budget": 2200,
+  "target_uptime_ticks": 1400,
+  "max_dropped_packets": 120,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 3,
+      "packet_mix": [
+        { "type": "INSTAGRAM_FEED_READ", "weight": 70 },
+        { "type": "INSTAGRAM_PHOTO_UPLOAD", "weight": 15 },
+        { "type": "INSTAGRAM_LIKE", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 400,
+      "rate": 7,
+      "packet_mix": [
+        { "type": "INSTAGRAM_FEED_READ", "weight": 65 },
+        { "type": "INSTAGRAM_PHOTO_UPLOAD", "weight": 15 },
+        { "type": "INSTAGRAM_LIKE", "weight": 20 }
+      ]
+    },
+    {
+      "start_tick": 950,
+      "rate": 11,
+      "packet_mix": [
+        { "type": "INSTAGRAM_FEED_READ", "weight": 60 },
+        { "type": "INSTAGRAM_PHOTO_UPLOAD", "weight": 20 },
+        { "type": "INSTAGRAM_LIKE", "weight": 20 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1400 },
+    { "metric": "completed_packets", "operator": ">=", "value": 650 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.8 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.1 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "INSTAGRAM_FEED_READ",
+      "operator": ">=",
+      "value": 380
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 120 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.4,
+      "after_tick": 500
+    }
+  ]
+}

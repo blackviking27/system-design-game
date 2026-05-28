@@ -1,0 +1,66 @@
+{
+  "id": "messenger",
+  "name": "Level 5: Messenger or WhatsApp",
+  "description": "Design a low-latency messaging service for sends, receives, and media messages.",
+  "starting_budget": 2300,
+  "target_uptime_ticks": 1500,
+  "max_dropped_packets": 125,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 4,
+      "packet_mix": [
+        { "type": "MESSAGE_SEND", "weight": 45 },
+        { "type": "MESSAGE_RECEIVE", "weight": 45 },
+        { "type": "MESSAGE_MEDIA_SEND", "weight": 10 }
+      ]
+    },
+    {
+      "start_tick": 450,
+      "rate": 8,
+      "packet_mix": [
+        { "type": "MESSAGE_SEND", "weight": 45 },
+        { "type": "MESSAGE_RECEIVE", "weight": 40 },
+        { "type": "MESSAGE_MEDIA_SEND", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 1000,
+      "rate": 12,
+      "packet_mix": [
+        { "type": "MESSAGE_SEND", "weight": 40 },
+        { "type": "MESSAGE_RECEIVE", "weight": 40 },
+        { "type": "MESSAGE_MEDIA_SEND", "weight": 20 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1500 },
+    { "metric": "completed_packets", "operator": ">=", "value": 800 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.82 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.09 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "MESSAGE_SEND",
+      "operator": ">=",
+      "value": 300
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 125 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.42,
+      "after_tick": 500
+    }
+  ]
+}

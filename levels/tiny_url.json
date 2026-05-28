@@ -1,0 +1,164 @@
+{
+  "id": "tiny_url",
+  "name": "TinyURL: Read-Heavy URL Shortener",
+  "description": "Design a read-heavy URL shortening service like TinyURL.",
+  "starting_budget": 1600,
+  "target_uptime_ticks": 1200,
+  "max_dropped_packets": 75,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 3,
+      "packet_mix": [
+        { "type": "TINYURL_RESOLVE", "weight": 95 },
+        { "type": "TINYURL_CREATE", "weight": 5 }
+      ]
+    },
+    {
+      "start_tick": 250,
+      "rate": 6,
+      "packet_mix": [
+        { "type": "TINYURL_RESOLVE", "weight": 90 },
+        { "type": "TINYURL_CREATE", "weight": 10 }
+      ]
+    },
+    {
+      "start_tick": 700,
+      "rate": 10,
+      "packet_mix": [
+        { "type": "TINYURL_RESOLVE", "weight": 85 },
+        { "type": "TINYURL_CREATE", "weight": 15 }
+      ]
+    }
+  ],
+  "terminal_packet_types": [
+    "CLIENT_SUCCESS"
+  ],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1200 },
+    { "metric": "completed_packets", "operator": ">=", "value": 500 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.9 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.05 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "TINYURL_RESOLVE",
+      "operator": ">=",
+      "value": 450
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 75 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.5,
+      "after_tick": 300
+    }
+  ],
+  "node_templates": {
+    "LoadBalancer": {
+      "type": "LoadBalancer",
+      "workflows": {
+        "": [
+          { "action": "TRANSFORM", "target": "TINYURL_RESOLVE", "value": null },
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ],
+        "TINYURL_RESOLVE": [
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ],
+        "TINYURL_CREATE": [
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ],
+        "RESOLVE_SUCCESS": [
+          { "action": "TRANSFORM", "target": "CLIENT_SUCCESS", "value": null }
+        ],
+        "CREATE_SUCCESS": [
+          { "action": "TRANSFORM", "target": "CLIENT_SUCCESS", "value": null }
+        ]
+      }
+    },
+    "Server": {
+      "type": "Server",
+      "workflows": {
+        "TINYURL_RESOLVE": [
+          { "action": "TRANSFORM", "target": "CACHE_LOOKUP", "value": null },
+          { "action": "FORWARD", "target": "cache_tier", "value": null }
+        ],
+        "CACHE_HIT": [
+          { "action": "TRANSFORM", "target": "RESOLVE_SUCCESS", "value": null },
+          { "action": "FORWARD", "target": "load_balancer", "value": null }
+        ],
+        "CACHE_MISS": [
+          { "action": "TRANSFORM", "target": "DB_LOOKUP", "value": null },
+          { "action": "FORWARD", "target": "database", "value": null }
+        ],
+        "DB_HIT": [
+          { "action": "TRANSFORM", "target": "CACHE_WRITE", "value": null },
+          { "action": "FORWARD", "target": "cache_tier", "value": null }
+        ],
+        "TINYURL_CREATE": [
+          { "action": "TRANSFORM", "target": "DB_WRITE", "value": null },
+          { "action": "FORWARD", "target": "database", "value": null }
+        ],
+        "DB_WRITE_ACK": [
+          { "action": "TRANSFORM", "target": "CACHE_WRITE", "value": null },
+          { "action": "FORWARD", "target": "cache_tier", "value": null }
+        ],
+        "CACHE_WRITE_ACK": [
+          { "action": "TRANSFORM", "target": "CREATE_SUCCESS", "value": null },
+          { "action": "FORWARD", "target": "load_balancer", "value": null }
+        ]
+      }
+    },
+    "MessageQueue": {
+      "type": "MessageQueue",
+      "workflows": {
+        "TINYURL_CREATE": [
+          { "action": "TRANSFORM", "target": "DB_WRITE", "value": null },
+          { "action": "FORWARD", "target": "database", "value": null }
+        ],
+        "DB_WRITE": [
+          { "action": "FORWARD", "target": "database", "value": null }
+        ]
+      }
+    },
+    "Cache": {
+      "type": "Cache",
+      "workflows": {
+        "CACHE_LOOKUP": [
+          { "action": "FETCH_STATE", "target": "short_code", "value": null },
+          { "action": "TRANSFORM_IF_FOUND", "target": "CACHE_HIT", "value": null },
+          { "action": "TRANSFORM_IF_MISSING", "target": "CACHE_MISS", "value": null },
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ],
+        "CACHE_WRITE": [
+          { "action": "STORE_STATE", "target": "short_code", "value": null },
+          { "action": "TRANSFORM", "target": "CACHE_WRITE_ACK", "value": null },
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ]
+      }
+    },
+    "DataBase": {
+      "type": "DataBase",
+      "workflows": {
+        "DB_LOOKUP": [
+          { "action": "FETCH_STATE", "target": "url_mapping", "value": null },
+          { "action": "TRANSFORM", "target": "DB_HIT", "value": null },
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ],
+        "DB_WRITE": [
+          { "action": "STORE_STATE", "target": "url_mapping", "value": null },
+          { "action": "TRANSFORM", "target": "DB_WRITE_ACK", "value": null },
+          { "action": "FORWARD", "target": "server_pool", "value": null }
+        ]
+      }
+    }
+  }
+}

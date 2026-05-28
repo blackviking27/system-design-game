@@ -1,0 +1,66 @@
+{
+  "id": "video_streaming",
+  "name": "Level 7: YouTube or Netflix",
+  "description": "Design a video platform with streaming, uploads, and recommendation reads.",
+  "starting_budget": 3000,
+  "target_uptime_ticks": 1700,
+  "max_dropped_packets": 180,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 4,
+      "packet_mix": [
+        { "type": "VIDEO_STREAM", "weight": 75 },
+        { "type": "VIDEO_UPLOAD", "weight": 10 },
+        { "type": "VIDEO_RECOMMENDATION", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 550,
+      "rate": 9,
+      "packet_mix": [
+        { "type": "VIDEO_STREAM", "weight": 70 },
+        { "type": "VIDEO_UPLOAD", "weight": 10 },
+        { "type": "VIDEO_RECOMMENDATION", "weight": 20 }
+      ]
+    },
+    {
+      "start_tick": 1150,
+      "rate": 15,
+      "packet_mix": [
+        { "type": "VIDEO_STREAM", "weight": 65 },
+        { "type": "VIDEO_UPLOAD", "weight": 15 },
+        { "type": "VIDEO_RECOMMENDATION", "weight": 20 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1700 },
+    { "metric": "completed_packets", "operator": ">=", "value": 950 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.76 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.12 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "VIDEO_STREAM",
+      "operator": ">=",
+      "value": 600
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 180 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.35,
+      "after_tick": 650
+    }
+  ]
+}

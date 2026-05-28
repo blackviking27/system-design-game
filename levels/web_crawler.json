@@ -1,0 +1,66 @@
+{
+  "id": "web_crawler",
+  "name": "Level 10: Web Crawler",
+  "description": "Design a crawler that fetches pages, parses content, and discovers links.",
+  "starting_budget": 2700,
+  "target_uptime_ticks": 1600,
+  "max_dropped_packets": 190,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 4,
+      "packet_mix": [
+        { "type": "CRAWLER_URL_FETCH", "weight": 60 },
+        { "type": "CRAWLER_PAGE_PARSE", "weight": 25 },
+        { "type": "CRAWLER_LINK_DISCOVERY", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 450,
+      "rate": 10,
+      "packet_mix": [
+        { "type": "CRAWLER_URL_FETCH", "weight": 55 },
+        { "type": "CRAWLER_PAGE_PARSE", "weight": 25 },
+        { "type": "CRAWLER_LINK_DISCOVERY", "weight": 20 }
+      ]
+    },
+    {
+      "start_tick": 1050,
+      "rate": 16,
+      "packet_mix": [
+        { "type": "CRAWLER_URL_FETCH", "weight": 50 },
+        { "type": "CRAWLER_PAGE_PARSE", "weight": 30 },
+        { "type": "CRAWLER_LINK_DISCOVERY", "weight": 20 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1600 },
+    { "metric": "completed_packets", "operator": ">=", "value": 1000 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.72 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.15 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "CRAWLER_URL_FETCH",
+      "operator": ">=",
+      "value": 520
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 190 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.3,
+      "after_tick": 650
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "id": "pastebin",
+  "name": "Level 2: Pastebin",
+  "description": "Design a text snippet service with frequent reads and occasional writes.",
+  "starting_budget": 1700,
+  "target_uptime_ticks": 1200,
+  "max_dropped_packets": 85,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 2,
+      "packet_mix": [
+        { "type": "PASTE_READ", "weight": 85 },
+        { "type": "PASTE_CREATE", "weight": 15 }
+      ]
+    },
+    {
+      "start_tick": 300,
+      "rate": 5,
+      "packet_mix": [
+        { "type": "PASTE_READ", "weight": 80 },
+        { "type": "PASTE_CREATE", "weight": 20 }
+      ]
+    },
+    {
+      "start_tick": 800,
+      "rate": 8,
+      "packet_mix": [
+        { "type": "PASTE_READ", "weight": 75 },
+        { "type": "PASTE_CREATE", "weight": 25 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1200 },
+    { "metric": "completed_packets", "operator": ">=", "value": 450 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.86 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.07 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "PASTE_READ",
+      "operator": ">=",
+      "value": 330
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 85 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.45,
+      "after_tick": 350
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "twitter",
+  "name": "Level 6: Twitter for Millions",
+  "description": "Design a high-fanout social stream with timeline reads and tweet writes.",
+  "starting_budget": 2600,
+  "target_uptime_ticks": 1600,
+  "max_dropped_packets": 150,
+  "unlocked_components": [
+    "Server",
+    "LoadBalancer",
+    "MessageQueue",
+    "Cache",
+    "Database"
+  ],
+  "traffic_pattern": [
+    {
+      "start_tick": 0,
+      "rate": 4,
+      "packet_mix": [
+        { "type": "TIMELINE_READ", "weight": 80 },
+        { "type": "TWEET_POST", "weight": 15 },
+        { "type": "NOTIFICATION_FANOUT", "weight": 5 }
+      ]
+    },
+    {
+      "start_tick": 500,
+      "rate": 9,
+      "packet_mix": [
+        { "type": "TIMELINE_READ", "weight": 75 },
+        { "type": "TWEET_POST", "weight": 15 },
+        { "type": "NOTIFICATION_FANOUT", "weight": 10 }
+      ]
+    },
+    {
+      "start_tick": 1100,
+      "rate": 14,
+      "packet_mix": [
+        { "type": "TIMELINE_READ", "weight": 70 },
+        { "type": "TWEET_POST", "weight": 20 },
+        { "type": "NOTIFICATION_FANOUT", "weight": 10 }
+      ]
+    }
+  ],
+  "terminal_packet_types": ["CLIENT_SUCCESS"],
+  "win_conditions": [
+    { "metric": "uptime_ticks", "operator": ">=", "value": 1600 },
+    { "metric": "completed_packets", "operator": ">=", "value": 900 },
+    { "metric": "success_rate", "operator": ">=", "value": 0.8 },
+    { "metric": "drop_rate", "operator": "<=", "value": 0.1 },
+    {
+      "metric": "completed_packets",
+      "packet_type": "TIMELINE_READ",
+      "operator": ">=",
+      "value": 600
+    }
+  ],
+  "loss_conditions": [
+    { "metric": "dropped_packets", "operator": ">", "value": 150 },
+    {
+      "metric": "success_rate",
+      "operator": "<",
+      "value": 0.38,
+      "after_tick": 600
+    }
+  ]
+}
